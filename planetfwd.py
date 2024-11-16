@@ -85,7 +85,29 @@ async def get_info(request_data: FootprintRequest):
         id_response = response.json()
         id = id_response["id"]
 
-        get_url = https://app.planetfwd.com/api/lca/{id}/generation_status 
+        get_url = "https://app.planetfwd.com/api/lca/{id}/generation_status" 
         ## continue later w get request
+        get_headers = {
+        "accept": "application/json",
+        "Authorization": f"Bearer {token}"
+        }
+
+        async with httpx.AsyncClient() as client:
+            get_response = await client.get(get_url, get_headers)
+        
+        if response.status_code != 200 and response.status_code != 201:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"Error from PlanetFWD API for get request: {response.text}",
+            )
+
+        get_response = response.json()
+        res = {
+            "emissionFactor": get_response["emissionFactor"],
+            "emissionFactorUnit": get_response["emissionFactorUnit"]
+        }
+
+        return res
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
