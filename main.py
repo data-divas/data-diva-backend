@@ -1,6 +1,5 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
-import pytesseract
 from PIL import Image
 import io
 import numpy as np
@@ -63,7 +62,6 @@ async def extract_text(file: UploadFile = File(...)):
     except Exception as e:
         # Return error message if the image couldn't be processed
         return JSONResponse({"error": str(e)}, status_code=400)
-        raise HTTPException(status_code=500, detail=str(e))
     
 
 class ImageData(BaseModel):
