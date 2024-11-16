@@ -13,6 +13,7 @@ import numpy as np
 import base64
 from PIL import Image
 import torch
+from ultralytics import YOLO
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -68,7 +69,9 @@ class ImageData(BaseModel):
     image: str
 
 # Load the YOLO model (e.g., YOLOv5)
-model = torch.hub.load("ultralytics/yolov5", "yolov5s")
+# model = torch.hub.load("ultralytics/yolov5", "yolov5s")
+
+model = YOLO("trained_yolo_model.pt")
 
 @app.post("/detect-product")
 async def detect_objects(data: ImageData):
@@ -78,16 +81,19 @@ async def detect_objects(data: ImageData):
         nparr = np.frombuffer(base64.b64decode(image_data), np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
-        
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         # Use PIL to open the image for YOLO
         pil_img = Image.fromarray(img_rgb)
 
         # Perform object detection with YOLO
-        results = model(pil_img)
+        results = model.predict("dasani.jpg", )
+        names = model.names
 
-       
+        for result in results:
+            for c in result.boxes.cls:
+                print(names[int(c)])
+        
         boxes = []
         labels = []
         confidences = []
