@@ -27,7 +27,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/detect-object/")
+@app.post("/ocr/")
 async def extract_text(file: UploadFile = File(...)):
     try:
         # Ensure the file is an image (check MIME type)
