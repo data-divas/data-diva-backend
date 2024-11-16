@@ -1,25 +1,24 @@
 # Start backend:
 1. Create and activate a virtual environment (only first time):
-```
+
 python -m venv venv 
-```
+
 and then:
 
-```
+
 source venv/bin/activate  # On Windows, use venv\Scripts\activate
-```
 
 2. Install the required packages:
 
-```
+
 pip install -r requirements.txt
-```
+
 
 3. Start Uvicorn Server:
 
-```
+
 uvicorn main:app --reload
-```
+
 
 4. Should now be running at: http://127.0.0.1:8000/
 
