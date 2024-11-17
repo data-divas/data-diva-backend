@@ -4,6 +4,7 @@ import httpx, json
 from dotenv import load_dotenv
 import os
 import requests
+import asyncio
 
 router = APIRouter()
 
@@ -73,7 +74,6 @@ async def get_info(request_data: FootprintRequest):
         # Forward the request to the external API
         async with httpx.AsyncClient() as client:
             response = await client.post(url, headers=headers, json=payload)
-
         # Handle non-200 responses from the external API
         if response.status_code != 200 and response.status_code != 201:
             raise HTTPException(
@@ -84,30 +84,47 @@ async def get_info(request_data: FootprintRequest):
         # Return the response from the external API
         id_response = response.json()
         id = id_response["id"]
+        print(id)
 
-        get_url = "https://app.planetfwd.com/api/lca/{id}/generation_status" 
-        ## continue later w get request
+        get_url = f"https://app.planetfwd.com/api/lca/{id}/generation_status" 
+
         get_headers = {
-        "accept": "application/json",
-        "Authorization": f"Bearer {token}"
+            "accept": "application/json",
+            "Authorization": f"Bearer {token}"
         }
 
-        async with httpx.AsyncClient() as client:
-            get_response = await client.get(get_url, get_headers)
+        max_retries = 10  # Maximum number of retries
+        retry_delay = 2  # Delay in seconds between retries
+
+        for _ in range(max_retries):
+            async with httpx.AsyncClient() as client:
+                get_response = await client.get(get_url, headers=get_headers)
+
+            if get_response.status_code != 200 and get_response.status_code != 201:
+                raise HTTPException(
+                    status_code=get_response.status_code,
+                    detail=f"Error from PlanetFWD API for get request: {get_response.text}",
+                )
+
+            get_response = get_response.json()
+            
+            # Check if "complete" is true
+            if get_response["complete"] == True:  # Use .get() to handle missing key gracefully
+                res = {
+                    "emissionFactor": get_response["emissionFactor"],
+                    "emissionFactorUnit": get_response["emissionFactorUnit"]
+                }
+                return res
+
+            # If "complete" is false, wait and retry
+            await asyncio.sleep(retry_delay)
+
+        # If the loop ends without finding "complete": true
         
-        if response.status_code != 200 and response.status_code != 201:
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=f"Error from PlanetFWD API for get request: {response.text}",
-            )
-
-        get_response = response.json()
-        res = {
-            "emissionFactor": get_response["emissionFactor"],
-            "emissionFactorUnit": get_response["emissionFactorUnit"]
-        }
-
-        return res
+        raise HTTPException(
+            status_code=504,
+            detail="The operation did not complete within the allowed retries."
+        )
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
