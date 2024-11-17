@@ -14,9 +14,11 @@ import numpy as np
 import base64
 from PIL import Image
 import torch
+from planetfwd import router
 
 # Initialize FastAPI app
 app = FastAPI()
+app.include_router(router)
 
 reader = easyocr.Reader(['en'], gpu=True)
 # Configure CORS: enable requests coming from a separate frontend (in this case, we run it locally)
