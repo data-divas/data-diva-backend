@@ -93,7 +93,7 @@ async def get_info(request_data: FootprintRequest):
             "Authorization": f"Bearer {token}"
         }
 
-        max_retries = 5  # Maximum number of retries
+        max_retries = 10  # Maximum number of retries
         retry_delay = 2  # Delay in seconds between retries
 
         for _ in range(max_retries):
@@ -107,9 +107,9 @@ async def get_info(request_data: FootprintRequest):
                 )
 
             get_response = get_response.json()
-
+            
             # Check if "complete" is true
-            if get_response.get("complete", False):  # Use .get() to handle missing key gracefully
+            if get_response["complete"] == True:  # Use .get() to handle missing key gracefully
                 res = {
                     "emissionFactor": get_response["emissionFactor"],
                     "emissionFactorUnit": get_response["emissionFactorUnit"]
@@ -120,6 +120,7 @@ async def get_info(request_data: FootprintRequest):
             await asyncio.sleep(retry_delay)
 
         # If the loop ends without finding "complete": true
+        
         raise HTTPException(
             status_code=504,
             detail="The operation did not complete within the allowed retries."
