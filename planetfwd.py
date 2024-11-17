@@ -73,7 +73,6 @@ async def get_info(request_data: FootprintRequest):
         # Forward the request to the external API
         async with httpx.AsyncClient() as client:
             response = await client.post(url, headers=headers, json=payload)
-
         # Handle non-200 responses from the external API
         if response.status_code != 200 and response.status_code != 201:
             raise HTTPException(
@@ -84,29 +83,32 @@ async def get_info(request_data: FootprintRequest):
         # Return the response from the external API
         id_response = response.json()
         id = id_response["id"]
+        print(id)
 
         get_url = "https://app.planetfwd.com/api/lca/{id}/generation_status" 
         ## continue later w get request
         get_headers = {
-        "accept": "application/json",
-        "Authorization": f"Bearer {token}"
+            "accept": "application/json",
+            "Authorization": f"Bearer {token}"
         }
 
         async with httpx.AsyncClient() as client:
-            get_response = await client.get(get_url, get_headers)
+            get_response = await client.get(get_url, headers=get_headers)
         
-        if response.status_code != 200 and response.status_code != 201:
+        if get_response.status_code != 200 and get_response.status_code != 201:
+            print("there is some error w this get")
             raise HTTPException(
-                status_code=response.status_code,
-                detail=f"Error from PlanetFWD API for get request: {response.text}",
+                status_code=get_response.status_code,
+                detail=f"Error from PlanetFWD API for get request: {get_response.text}",
             )
 
-        get_response = response.json()
+        get_response = get_response.json()
+        print(f"this is: {get_response}")
         res = {
             "emissionFactor": get_response["emissionFactor"],
             "emissionFactorUnit": get_response["emissionFactorUnit"]
         }
-
+        print(res)
         return res
 
     except Exception as e:
