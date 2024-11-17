@@ -15,6 +15,9 @@ import base64
 from PIL import Image
 import torch
 from planetfwd import router
+import ollama
+from ollama import Client
+import asyncio
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -29,6 +32,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+Ollama_client = Client(host='http://localhost:11434')
 
 
 @app.post("/ocr/")
@@ -158,14 +163,35 @@ async def detect_objects(data: ImageData):
         print(f"Error details: {str(e)}") 
         raise HTTPException(status_code=500, detail=f"Error processing image: {e}")
     
-
+class ProductData(BaseModel):
+    data: str
+    
 # # Endpoint to parse product data from the detected text
 @app.post("/parse-product-data")
-async def parse_product_data(data: str):
-    return {
-        "success": True,
-        "product_data": data
-    }
+async def parse_product_data(product_data: ProductData):
+    try:
+        # Run the synchronous Ollama chat method in a separate thread
+        loop = asyncio.get_running_loop()
+        response = await loop.run_in_executor(
+            None,
+            lambda: Ollama_client.chat(
+                model='llama3.1',
+                messages=[
+                {
+                'role': 'user',
+            'content': f"""You are given packaging text for item at the store, infer a short 1 sentence description and weight with units: {product_data.data} \n
+            your response MUST look like "description, weight, weight's unit" """
+        }]
+            )
+        )
+        
+        response['message']['content'] =  response['message']['content'].split(",")
+        if len(response['message']['content']) != 3:
+            raise ValueError("Invalid response format. Please provide a description, weight, and unit.")
+        
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     
 
 
