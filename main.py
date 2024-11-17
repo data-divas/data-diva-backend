@@ -158,7 +158,12 @@ async def detect_objects(data: ImageData):
     
 
 # # Endpoint to parse product data from the detected text
-# @app.post("/parse-product-data")
-
+@app.post("/parse-product-data")
+async def parse_product_data(data: str):
+    return {
+        "success": True,
+        "product_data": data
+    }
+    
 
 
