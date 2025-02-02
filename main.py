@@ -193,5 +193,7 @@ async def parse_product_data(product_data: ProductData):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+def hi():
+    print("hi")
 
 
